@@ -18,6 +18,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ PyTorch Mistral model."""
+import os
+import pickle
 import inspect
 import math
 import warnings
@@ -257,6 +259,8 @@ class MistralAttention(nn.Module):
         query_states = self.q_proj(hidden_states)
         key_states = self.k_proj(hidden_states)
         value_states = self.v_proj(hidden_states)
+
+        
 
         query_states = query_states.view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         key_states = key_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
@@ -753,6 +757,15 @@ class MistralDecoderLayer(nn.Module):
 
         hidden_states = self.input_layernorm(hidden_states)
 
+        # Scrutiny:
+        ENABLE_SCRUTINY = True if random.random() > 0.8 else False
+        if ENABLE_SCRUTINY:
+            cache_data = {}
+            cache_data["qkv_input"] = hidden_states
+            cache_data["q_proj"] = self.self_attn.q_proj.weight
+            cache_data["k_proj"] = self.self_attn.k_proj.weight
+            cache_data["v_proj"] = self.self_attn.v_proj.weight
+
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
             hidden_states=hidden_states,
@@ -767,8 +780,23 @@ class MistralDecoderLayer(nn.Module):
         # Fully Connected
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
+
+        if ENABLE_SCRUTINY:
+            cache_data["mlp_input"] = hidden_states
+            cache_data["gate_proj"] = self.mlp.gate_proj.weight
+            cache_data["up_proj"] = self.mlp.up_proj.weight
+        
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
+
+        # Save Scrutiny data
+        if ENABLE_SCRUTINY:
+            SCRUTINY_SAVE_DIR = os.environ.get('SCRUTINY_SAVE_DIR')
+            MODEL_NAME = "scrutiny_data_" + str(10000 * int(random.random())) + ".pth"
+            with open(os.path.join(SCRUTINY_SAVE_DIR, MODEL_NAME), "w") as fp:
+                pickle.dump(cache_data, fp)
+                fp.close()
+            
 
         outputs = (hidden_states,)
 
