@@ -796,7 +796,7 @@ class MistralDecoderLayer(nn.Module):
             SCRUTINY_SAVE_DIR = os.environ.get('SCRUTINY_SAVE_DIR')
             os.makedirs(SCRUTINY_SAVE_DIR, exist_ok=True)
             MODEL_NAME = "scrutiny_data_" + str(10000 * int(random.random())) + ".pth"
-            with open(os.path.join(SCRUTINY_SAVE_DIR, MODEL_NAME), "w") as fp:
+            with open(os.path.join(SCRUTINY_SAVE_DIR, MODEL_NAME), "wb") as fp:
                 pickle.dump(cache_data, fp)
                 fp.close()
             
