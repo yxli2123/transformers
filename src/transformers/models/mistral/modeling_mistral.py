@@ -760,6 +760,7 @@ class MistralDecoderLayer(nn.Module):
         # Scrutiny:
         ENABLE_SCRUTINY = True if random.random() > 0.8 else False
         if ENABLE_SCRUTINY:
+            print(10*"=", "Scrutiny", 10*"=")
             cache_data = {}
             cache_data["qkv_input"] = hidden_states
             cache_data["q_proj"] = self.self_attn.q_proj.weight
