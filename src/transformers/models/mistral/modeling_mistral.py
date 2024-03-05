@@ -796,10 +796,8 @@ class MistralDecoderLayer(nn.Module):
             SCRUTINY_SAVE_DIR = os.environ.get('SCRUTINY_SAVE_DIR')
             os.makedirs(SCRUTINY_SAVE_DIR, exist_ok=True)
             MODEL_NAME = "scrutiny_data_" + str(int(10000 * random.random())) + ".pth"
-            with open(os.path.join(SCRUTINY_SAVE_DIR, MODEL_NAME), "wb") as fp:
-                pickle.dump(cache_data, fp)
-                fp.close()
-            
+            cache_data = {k: v.detach().cpu() for k, v in cache_data.items()}
+            torch.save(cache_data, os.path.join(SCRUTINY_SAVE_DIR, MODEL_NAME))
 
         outputs = (hidden_states,)
 
