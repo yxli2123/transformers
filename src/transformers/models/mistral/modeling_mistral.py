@@ -20,6 +20,7 @@
 """ PyTorch Mistral model."""
 import os
 import pickle
+import random
 import inspect
 import math
 import warnings
