@@ -408,6 +408,7 @@ class MoeModelOutputWithPast(ModelOutput):
     hidden_states: Optional[Tuple[torch.FloatTensor, ...]] = None
     attentions: Optional[Tuple[torch.FloatTensor, ...]] = None
     router_logits: Optional[Tuple[torch.FloatTensor]] = None
+    active_proportion: Optional[Tuple[torch.FloatTensor]] = None
 
 
 @dataclass
@@ -457,6 +458,7 @@ class MoeCausalLMOutputWithPast(ModelOutput):
     hidden_states: Optional[Tuple[torch.FloatTensor, ...]] = None
     attentions: Optional[Tuple[torch.FloatTensor, ...]] = None
     router_logits: Optional[Tuple[torch.FloatTensor]] = None
+    active_proportion: Optional[Tuple[torch.FloatTensor]] = None
 
 
 @dataclass

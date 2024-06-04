@@ -804,6 +804,14 @@ class MixtralBlockSparseTop2MLP(nn.Module):
         current_hidden_states = self.w2(current_hidden_states)
         return current_hidden_states
 
+    @torch.no_grad()
+    def compute_active_proportion(self, hidden_states):
+        w1_output = self.w1(hidden_states)
+        positive_mask = w1_output > 0
+        active_proportion = positive_mask.float().mean(dim=1)
+
+        return active_proportion
+
 
 class MixtralBLockSparseTop2MLP(MixtralBlockSparseTop2MLP):
     def __init__(self, *args, **kwargs):
@@ -837,7 +845,7 @@ class MixtralSparseMoeBlock(nn.Module):
 
         self.experts = nn.ModuleList([MixtralBlockSparseTop2MLP(config) for _ in range(self.num_experts)])
 
-    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+    def forward(self, hidden_states: torch.Tensor) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """ """
         batch_size, sequence_length, hidden_dim = hidden_states.shape
         hidden_states = hidden_states.view(-1, hidden_dim)
@@ -859,9 +867,14 @@ class MixtralSparseMoeBlock(nn.Module):
         expert_mask = torch.nn.functional.one_hot(selected_experts, num_classes=self.num_experts).permute(2, 1, 0)
 
         # Loop over all available experts in the model and perform the computation on each expert
+        active_proportion = []
         for expert_idx in range(self.num_experts):
             expert_layer = self.experts[expert_idx]
             idx, top_x = torch.where(expert_mask[expert_idx])
+
+            # Report the activate neuron proportion
+            current_expert_active_proportion = expert_layer.compute_active_proportion(hidden_states)
+            active_proportion.append(current_expert_active_proportion)
 
             if top_x.shape[0] == 0:
                 continue
@@ -880,7 +893,8 @@ class MixtralSparseMoeBlock(nn.Module):
             # the `top_x` tensor here.
             final_hidden_states.index_add_(0, top_x, current_hidden_states.to(hidden_states.dtype))
         final_hidden_states = final_hidden_states.reshape(batch_size, sequence_length, hidden_dim)
-        return final_hidden_states, router_logits
+        active_proportion = torch.vstack(active_proportion).T  # (N, num_expert)
+        return final_hidden_states, (router_logits, active_proportion)
 
 
 class MixtralDecoderLayer(nn.Module):
@@ -1207,6 +1221,7 @@ class MixtralModel(MixtralPreTrainedModel):
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         all_router_logits = () if output_router_logits else None
+        all_active_proportion = () if output_router_logits else None
         next_decoder_cache = None
 
         for decoder_layer in self.layers:
@@ -1244,7 +1259,8 @@ class MixtralModel(MixtralPreTrainedModel):
                 all_self_attns += (layer_outputs[1],)
 
             if output_router_logits:
-                all_router_logits += (layer_outputs[-1],)
+                all_router_logits += (layer_outputs[-1][0],)
+                all_active_proportion += (layer_outputs[-1][1],)
 
         hidden_states = self.norm(hidden_states)
 
@@ -1268,6 +1284,7 @@ class MixtralModel(MixtralPreTrainedModel):
             hidden_states=all_hidden_states,
             attentions=all_self_attns,
             router_logits=all_router_logits,
+            active_proportion=all_active_proportion,
         )
 
 
@@ -1412,6 +1429,7 @@ class MixtralForCausalLM(MixtralPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
             router_logits=outputs.router_logits,
+            active_proportion=outputs.active_proportion,
         )
 
     def prepare_inputs_for_generation(
