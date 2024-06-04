@@ -24,7 +24,7 @@ def main():
 
     model_input = tokenizer(text, return_tensors="pt")
     model_input = {k: v.to("cuda") if torch.is_tensor(v) else v for k, v in model_input.items()}
-    outputs = model(**model_input)
+    outputs = model(output_router_logits=True, **model_input)
     active_proportion = outputs.active_proportion
     router_logits = outputs.router_logits
     router_scores = F.softmax(router_logits, dim=-1)
