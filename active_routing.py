@@ -24,15 +24,16 @@ def main():
 
     model_input = tokenizer(text, return_tensors="pt")
     model_input = {k: v.to("cuda") if torch.is_tensor(v) else v for k, v in model_input.items()}
-    outputs = model(output_router_logits=True, **model_input)
+    with torch.no_grad():
+        outputs = model(output_router_logits=True, **model_input)
     active_proportion = outputs.active_proportion
     router_logits = outputs.router_logits
     print(outputs)
 
     router_scores = [F.softmax(router_logits_, dim=-1) for router_logits_ in router_logits]
     for i, (proportions, scores) in enumerate(zip(active_proportion, router_scores)):
-        proportions = proportions.cpu().numpy()
-        scores = scores.cpu().numpy()
+        proportions = proportions.detach().cpu().numpy()
+        scores = scores.detach().cpu().numpy()
         for j, (proportion, score) in enumerate(zip(proportions, scores)):
             plt.bar(proportion, label="active neuron")
             plt.bar(score, label="routing score")
