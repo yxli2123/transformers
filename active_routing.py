@@ -39,6 +39,7 @@ def main():
             plt.bar(range(len(score)), score, label="routing score")
             plt.legend()
             plt.savefig(f"figures/layer_{i:02}-token_{j:02}.png")
+            plt.close()
 
 
 if __name__ == "__main__":
