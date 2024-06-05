@@ -27,16 +27,17 @@ def main():
     outputs = model(output_router_logits=True, **model_input)
     active_proportion = outputs.active_proportion
     router_logits = outputs.router_logits
-    router_scores = F.softmax(router_logits, dim=-1)
-
     print(outputs)
 
-    for i, (proportion, score) in enumerate(zip(active_proportion, router_scores)):
-        proportion = proportion.cpu().numpy()
-        score = score.cpu().numpy()
-        plt.bar(proportion, label="active neuron")
-        plt.bar(score, label="routing score")
-        plt.savefig(f"figures/active_routing_{i:02}.png")
+    router_scores = [F.softmax(router_logits_, dim=-1) for router_logits_ in router_logits]
+    for i, (proportions, scores) in enumerate(zip(active_proportion, router_scores)):
+        proportions = proportions.cpu().numpy()
+        scores = scores.cpu().numpy()
+        for j, (proportion, score) in enumerate(zip(proportions, scores)):
+            plt.bar(proportion, label="active neuron")
+            plt.bar(score, label="routing score")
+            plt.legend()
+            plt.savefig(f"figures/layer_{i:02}-token_{j:02}.png")
 
 
 if __name__ == "__main__":
