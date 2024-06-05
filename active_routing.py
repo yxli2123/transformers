@@ -35,8 +35,8 @@ def main():
         proportions = proportions.detach().cpu().numpy()
         scores = scores.detach().cpu().numpy()
         for j, (proportion, score) in enumerate(zip(proportions, scores)):
-            plt.bar(proportion, label="active neuron")
-            plt.bar(score, label="routing score")
+            plt.bar(range(len(proportion)), proportion, label="active neuron")
+            plt.bar(range(len(score)), score, label="routing score")
             plt.legend()
             plt.savefig(f"figures/layer_{i:02}-token_{j:02}.png")
 
