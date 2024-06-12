@@ -182,7 +182,7 @@ class MistralMLP(nn.Module):
     def compute_active_proportion(self, hidden_states):
         w1_output = self.gate_proj(hidden_states)
         positive_mask = w1_output > 0
-        active_proportion = positive_mask.float().mean(dim=1)
+        active_proportion = positive_mask.float().mean(dim=-1)
         return active_proportion
 
     def forward(self, x):
