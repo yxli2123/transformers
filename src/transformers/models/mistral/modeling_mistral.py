@@ -766,7 +766,7 @@ class MistralDecoderLayer(nn.Module):
         hidden_states = self.input_layernorm(hidden_states)
 
         # Scrutiny:
-        ENABLE_SCRUTINY = True if random.random() > 0.0 else False
+        ENABLE_SCRUTINY = True
         if ENABLE_SCRUTINY:
             print(10*"=", "Scrutiny", 10*"=")
             cache_data = {}
