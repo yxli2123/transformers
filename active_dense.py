@@ -36,7 +36,7 @@ def main():
     for i, scrutiny_file in enumerate(scrutiny_files):
         scrutiny_file_path = os.path.join(SCRUTINY_SAVE_DIR, scrutiny_file)
         scrutiny_data = torch.load(scrutiny_file_path)
-        active_proportion = scrutiny_data["active_proportion"].numpy()
+        active_proportion = scrutiny_data["active_proportion"].numpy().flatten()
         plt.plot(active_proportion)
         plt.savefig(os.path.join(PLOT_SAVE_DIR, f"dense_{i}.png"))
         plt.close()
