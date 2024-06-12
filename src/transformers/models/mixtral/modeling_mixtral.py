@@ -809,10 +809,6 @@ class MixtralBlockSparseTop2MLP(nn.Module):
     @torch.no_grad()
     def compute_active_proportion(self, hidden_states):
         w1_output = self.w1(hidden_states)
-        plt.hist(w1_output.detach().cpu().numpy(), bins=20)
-        idx = random.randint(0, 123456789)
-        plt.savefig(f"output/{idx}.png")
-        plt.close()
         positive_mask = w1_output > 0
         active_proportion = positive_mask.float().mean(dim=1)
 
