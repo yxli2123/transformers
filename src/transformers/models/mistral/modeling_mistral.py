@@ -46,7 +46,7 @@ from ...utils import (
     replace_return_docstrings,
 )
 from .configuration_mistral import MistralConfig
-
+import matplotlib.pyplot as plt
 
 if is_flash_attn_2_available():
     from flash_attn import flash_attn_func, flash_attn_varlen_func
@@ -177,6 +177,13 @@ class MistralMLP(nn.Module):
         self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
         self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
         self.act_fn = ACT2FN[config.hidden_act]
+
+    @torch.no_grad()
+    def compute_active_proportion(self, hidden_states):
+        w1_output = self.gate_proj(hidden_states)
+        positive_mask = w1_output > 0
+        active_proportion = positive_mask.float().mean(dim=1)
+        return active_proportion
 
     def forward(self, x):
         return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
@@ -759,7 +766,7 @@ class MistralDecoderLayer(nn.Module):
         hidden_states = self.input_layernorm(hidden_states)
 
         # Scrutiny:
-        ENABLE_SCRUTINY = True if random.random() > 0.8 else False
+        ENABLE_SCRUTINY = True if random.random() > 0.0 else False
         if ENABLE_SCRUTINY:
             print(10*"=", "Scrutiny", 10*"=")
             cache_data = {}
@@ -785,6 +792,7 @@ class MistralDecoderLayer(nn.Module):
 
         if ENABLE_SCRUTINY:
             cache_data["mlp_input"] = hidden_states
+            cache_data["active_proportion"] = self.mlp.compute_active_proportion(hidden_states)
             cache_data["gate_proj"] = self.mlp.gate_proj.weight
             cache_data["up_proj"] = self.mlp.up_proj.weight
         
