@@ -30,7 +30,7 @@ def main():
     model_input = tokenizer(text, return_tensors="pt")
     model_input = {k: v.to("cuda") if torch.is_tensor(v) else v for k, v in model_input.items()}
     with torch.no_grad():
-        _ = model(output_router_logits=True, **model_input)
+        _ = model(**model_input)
 
     scrutiny_files = os.listdir(SCRUTINY_SAVE_DIR)
     for i, scrutiny_file in enumerate(scrutiny_files):
