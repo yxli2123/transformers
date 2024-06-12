@@ -53,6 +53,8 @@ from ...utils import (
 from ...utils.import_utils import is_torch_fx_available
 from .configuration_mixtral import MixtralConfig
 
+import matplotlib.pyplot as plt
+import random
 
 if is_flash_attn_2_available():
     from flash_attn import flash_attn_func, flash_attn_varlen_func
@@ -807,7 +809,11 @@ class MixtralBlockSparseTop2MLP(nn.Module):
     @torch.no_grad()
     def compute_active_proportion(self, hidden_states):
         w1_output = self.w1(hidden_states)
-        positive_mask = w1_output > -2
+        plt.hist(w1_output.detach().cpu().numpy(), bins=20)
+        idx = random.randint(0, 123456789)
+        plt.savefig(f"output/{idx}.png")
+        plt.close()
+        positive_mask = w1_output > 0
         active_proportion = positive_mask.float().mean(dim=1)
 
         return active_proportion
