@@ -38,6 +38,8 @@ def main():
         scrutiny_data = torch.load(scrutiny_file_path)
         active_proportion = scrutiny_data["active_proportion"].numpy().flatten()
         plt.plot(active_proportion)
+        plt.xlabel("Token Index")
+        plt.ylabel("Active Proportion w1(x) > 0")
         plt.savefig(os.path.join(PLOT_SAVE_DIR, f"dense_{i}.png"))
         plt.close()
 
